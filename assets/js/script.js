@@ -3,6 +3,69 @@
 (function () {
     "use strict";
 
+    class Vector2 {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        magnitudeSquared() {
+            return this.x * this.x + this.y * this.y;
+        }
+
+        magnitude() {
+            return Math.sqrt(this.magnitudeSquared());
+        }
+
+        unit() {
+            const m = this.magnitude();
+            return new Vector2(this.x / m, this.y / m);
+        }
+
+        normal() {
+            return new Vector2(this.y, -this.x);
+        }
+
+        add(that) {
+            return new Vector2(this.x + that.x, this.y + that.y);
+        }
+
+        sub(that) {
+            return new Vector2(this.x - that.x, this.y - that.y);
+        }
+
+        mul(c) {
+            return new Vector2(this.x * c, this.y * c);
+        }
+
+        dot(that) {
+            return this.x * that.x + this.y * that.y;
+        }
+    }
+
+    class Line {
+        constructor(p1, p2) {
+            this.p1 = p1;
+            this.p2 = p2;
+        }
+
+        /**
+         * return undefined or distance from p to the intersection with this Line.
+         * This doesn't check that the intersection lies within the endpoints.
+         * @param {starting point} p
+         * @param {unit direction} v
+         */
+        intersection(p, v) {
+            const n = this.p2.sub(this.p1).normal();
+            const d = n.dot(v);
+            if (Math.abs(d) < 0.0001) {
+                return undefined;
+            }
+            const t = this.p1.sub(p).dot(n) / d;
+            return t;
+        }
+    }
+
     const xsize = 45;
     const ysize = 40;
     const scale = 15;
@@ -10,6 +73,7 @@
     let container,
         bat,
         bricks,
+        ball,
         leftPressed = false,
         rightPressed = false;
 
@@ -42,6 +106,7 @@
 
         initialiseBat();
         initialiseBricks();
+        initialiseBall();
     });
 
     function positionDiv(item) {
@@ -53,6 +118,10 @@
 
     function makeTranslate(x, y) {
         return `translate(${x * scale}px,${y * scale}px)`;
+    }
+
+    function makeBallTranslate(x, y, r) {
+        return `translate(${(x - r) * scale}px,${(y - r) * scale}px)`;
     }
 
     function initialiseBat() {
@@ -84,8 +153,72 @@
                 div.style.width = (brick.w * scale) + "px";
                 div.style.height = (brick.h * scale) + "px";
                 container.appendChild(div);
+                // Calculate edges
+                const p0 = { x: brick.x, y: brick.y };
+                const p1 = { x: brick.x + brick.w, y: brick.y };
+                const p2 = { x: brick.x + brick.w, y: brick.y + brick.h };
+                const p3 = { x: brick.x, y: brick.y + brick.h };
+                brick.box = { p0, p1, p2, p3 };
+                /*edges.push({ p0: p0, p1: p1, item: brick });
+                edges.push({ p0: p1, p1: p2, item: brick });
+                edges.push({ p0: p2, p1: p3, item: brick });
+                edges.push({ p0: p3, p1: p0, item: brick });*/
             }
         }
+    }
+
+    function initialiseBall() {
+        const radius = 0.5;
+        const div = document.createElement("div");
+        ball = { p: new Vector2(xsize - 10, ysize - 3), w: 2 * radius, h: 2 * radius, r: radius, v: new Vector2(-4, -4), div: div };
+        div.classList.add("ball");
+        div.style.width = (ball.w * scale) + "px";
+        div.style.height = (ball.h * scale) + "px";
+        div.style.transform = makeBallTranslate(ball.p.x, ball.p.y, ball.r);
+        container.appendChild(div);
+        launchBall();
+    }
+
+    function launchBall() {
+        const p0 = new Vector2(ball.r, ysize - ball.r);
+        const p1 = new Vector2(ball.r, ball.r);
+        const p2 = new Vector2(xsize - ball.r, ball.r);
+        const p3 = new Vector2(xsize - ball.r, ysize - ball.r);
+
+        const lines = [
+            new Line(p0, p1),
+            new Line(p1, p2),
+            new Line(p2, p3),
+            new Line(p3, p0)
+        ]
+
+        let d = Infinity;
+        let best;
+        let speed = ball.v.magnitude();
+        let v = ball.v; //.mul(1 / speed);
+        for (const line of lines) {
+            const t = line.intersection(ball.p, v);
+            if (t > 0 && t < d) {
+                d = t;
+                best = line;
+            }
+        }
+        let normal = best.p1.sub(best.p2).unit().normal();
+        let target = ball.p.add(ball.v.mul(d));
+        ball.animation = ball.div.animate(
+            [
+                { transform: makeBallTranslate(ball.p.x, ball.p.y, ball.r) }, // 0%
+                { transform: makeBallTranslate(target.x, target.y, ball.r) } // 100%
+            ],
+            1000 * d / speed
+        );
+        ball.p = target;
+        ball.div.style.transform = makeBallTranslate(ball.p.x, ball.p.y, ball.r);
+        ball.animation.addEventListener("finish", function () {
+            ball.animation = undefined;
+            ball.v = ball.v.add(normal.mul(-2 * ball.v.dot(normal)));
+            launchBall();
+        });
     }
 
     function manageBat() {

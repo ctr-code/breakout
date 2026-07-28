@@ -16,6 +16,12 @@ body {
     background-color: yellow;
 }
 
+.ball {
+    position: absolute;
+    background-color: lightgreen;
+    border-radius: 50%;
+}
+
 .brick {
     position: absolute;
 }

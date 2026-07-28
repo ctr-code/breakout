@@ -1,0 +1,41 @@
+body {
+    background-color: black;
+}
+
+#game {
+    border-width: 5px 5px 0 5px;
+    border-style: solid;
+    border-color: yellow;
+    margin: auto;
+    position: relative;
+    box-sizing: content-box;
+}
+
+.bat {
+    position: absolute;
+    background-color: yellow;
+}
+
+.brick {
+    position: absolute;
+}
+
+.row0 {
+    background-color: red;
+}
+
+.row1 {
+    background-color: green;
+}
+
+.row2 {
+    background-color: yellow;
+}
+
+.row3 {
+    background-color: blue;
+}
+
+.row4 {
+    background-color: magenta;
+}

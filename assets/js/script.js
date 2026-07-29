@@ -195,7 +195,7 @@
         let d = Infinity;
         let best;
         let speed = ball.v.magnitude();
-        let v = ball.v; //.mul(1 / speed);
+        let v = ball.v;
         for (const line of lines) {
             const t = line.intersection(ball.p, v);
             if (t > 0 && t < d) {
@@ -203,8 +203,10 @@
                 best = line;
             }
         }
+        // Bounce this far short of the wall to prevent rounding errors putting us on the wrong side
+        const fudge = 0.01;
         let normal = best.p1.sub(best.p2).unit().normal();
-        let target = ball.p.add(ball.v.mul(d));
+        let target = ball.p.add(ball.v.mul(d - fudge / speed));
         ball.animation = ball.div.animate(
             [
                 { transform: makeBallTranslate(ball.p.x, ball.p.y, ball.r) }, // 0%

@@ -32,6 +32,10 @@ body {
     position: absolute;
 }
 
+.dead {
+    visibility: hidden;
+}
+
 .row0 {
     background-color: red;
 }

@@ -51,7 +51,6 @@
 
         /**
          * return undefined or distance from p to the intersection with this Line.
-         * This doesn't check that the intersection lies within the endpoints.
          * @param {starting point} p
          * @param {direction} v
          */
@@ -61,7 +60,12 @@
             if (Math.abs(d) < 0.0001) {
                 return undefined;
             }
-            const t = this.p1.sub(p).dot(n) / d;
+            const diff = this.p1.sub(p);
+            const u = diff.dot(v.normal()) / d;
+            if (u < 0 || u > 1) {
+                return undefined;
+            }
+            const t = diff.dot(n) / d;
             return t;
         }
 
@@ -187,16 +191,6 @@
                 div.style.width = (brick.w * scale) + "px";
                 div.style.height = (brick.h * scale) + "px";
                 container.appendChild(div);
-                // Calculate edges
-                const p0 = { x: brick.x, y: brick.y };
-                const p1 = { x: brick.x + brick.w, y: brick.y };
-                const p2 = { x: brick.x + brick.w, y: brick.y + brick.h };
-                const p3 = { x: brick.x, y: brick.y + brick.h };
-                brick.box = { p0, p1, p2, p3 };
-                /*edges.push({ p0: p0, p1: p1, item: brick });
-                edges.push({ p0: p1, p1: p2, item: brick });
-                edges.push({ p0: p2, p1: p3, item: brick });
-                edges.push({ p0: p3, p1: p0, item: brick });*/
             }
         }
     }
@@ -246,8 +240,14 @@
             launchBall(true);
         }
 
-        function deadBall() {
+        function bounceBrick(normal, brick) {
+            brick.dead = true;
+            brick.div.classList.add("dead");
+            ball.v = ball.v.add(normal.mul(-2 * ball.v.dot(normal)));
+            launchBall();
+        }
 
+        function deadBall() {
         }
 
         function test(obstacle, reaction) {
@@ -260,11 +260,11 @@
         }
 
         function testBox(x1, x2, y1, y2, reaction) {
-            // TODO: Update line intersection to check it's within line segment
             test(new Line(new Vector2(x1, y1 - ball.r), new Vector2(x2, y1 - ball.r)), reaction);
             test(new Line(new Vector2(x1 - ball.r, y1), new Vector2(x1 - ball.r, y2)), reaction);
             test(new Line(new Vector2(x1, y2 + ball.r), new Vector2(x2, y2 + ball.r)), reaction);
             test(new Line(new Vector2(x2 + ball.r, y1), new Vector2(x2 + ball.r, y2)), reaction);
+            //test(new Circle(new Vector2(20, 20), 5), bounce);
         }
 
         test(new Line(p0, p1), bounce);
@@ -274,7 +274,12 @@
         if (!skipBat) {
             test(new Line(new Vector2(0, bat.p.y - ball.r), new Vector2(xsize, bat.p.y - ball.r)), bounceBat);
         }
-        //test(new Circle(new Vector2(20, 20), 5), bounce);
+
+        for (const brick of bricks) {
+            if (!brick.dead) {
+                testBox(brick.x, brick.x + brick.w, brick.y, brick.y + brick.h, normal => {bounceBrick(normal, brick);} );
+            }
+        }
 
         // Bounce this far short of the wall to prevent rounding errors putting us on the wrong side
         const fudge = 0.01;

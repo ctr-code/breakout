@@ -53,7 +53,7 @@
          * return undefined or distance from p to the intersection with this Line.
          * This doesn't check that the intersection lies within the endpoints.
          * @param {starting point} p
-         * @param {unit direction} v
+         * @param {direction} v
          */
         intersection(p, v) {
             const n = this.p2.sub(this.p1).normal();
@@ -63,6 +63,40 @@
             }
             const t = this.p1.sub(p).dot(n) / d;
             return t;
+        }
+
+        unitNormal() {
+            return this.p1.sub(this.p2).unit().normal();
+        }
+    }
+
+    class Circle {
+        constructor(c, r) {
+            this.c = c;
+            this.r = r;
+        }
+
+        intersection(p, v) {
+            const vsq = v.magnitudeSquared();
+            const p2 = p.sub(this.c);
+            const dot = p2.dot(v);
+            const D = dot * dot - vsq * (p2.magnitudeSquared() - this.r * this.r);
+            if (D <= 0) {
+                return undefined;
+            }
+            const t1 = (-dot - Math.sqrt(D)) / vsq;
+            const t2 = (-dot + Math.sqrt(D)) / vsq;
+            if (t1 > 0) {
+                return t1;
+            } else if (t2 > 0) {
+                return t2;
+            } else {
+                return undefined;
+            }
+        }
+
+        unitNormal(target) {
+            return target.sub(this.c).unit();
         }
     }
 
@@ -104,6 +138,7 @@
             }
         });
 
+        addCircle(20, 20, 5);
         initialiseBat();
         initialiseBricks();
         initialiseBall();
@@ -167,6 +202,15 @@
         }
     }
 
+    function addCircle(x, y, r) {
+        const div = document.createElement("div");
+        div.classList.add("circ");
+        div.style.width = (2 * r * scale) + "px";
+        div.style.height = (2 * r * scale) + "px";
+        div.style.transform = makeBallTranslate(x, y, r);
+        container.appendChild(div);
+    }
+ 
     function initialiseBall() {
         const radius = 0.5;
         const div = document.createElement("div");
@@ -189,7 +233,8 @@
             new Line(p0, p1),
             new Line(p1, p2),
             new Line(p2, p3),
-            new Line(p3, p0)
+            new Line(p3, p0),
+            new Circle(new Vector2(20, 20), 5)
         ]
 
         let d = Infinity;
@@ -205,8 +250,8 @@
         }
         // Bounce this far short of the wall to prevent rounding errors putting us on the wrong side
         const fudge = 0.01;
-        let normal = best.p1.sub(best.p2).unit().normal();
-        let target = ball.p.add(ball.v.mul(d - fudge / speed));
+        const target = ball.p.add(ball.v.mul(d - fudge / speed));
+        const normal = best.unitNormal(target);
         ball.animation = ball.div.animate(
             [
                 { transform: makeBallTranslate(ball.p.x, ball.p.y, ball.r) }, // 0%

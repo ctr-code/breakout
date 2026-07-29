@@ -22,6 +22,12 @@ body {
     border-radius: 50%;
 }
 
+.circ {
+    position: absolute;
+    background-color: lightgrey;
+    border-radius: 50%;
+}
+
 .brick {
     position: absolute;
 }

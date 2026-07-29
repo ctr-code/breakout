@@ -142,10 +142,27 @@
             }
         });
 
+        window.addEventListener("resize", resize);
+
+        resize();
         initialiseBat();
         initialiseBricks();
         initialiseBall();
     });
+
+    function resize() {
+        const maxWidth = window.innerWidth * 0.9;
+        const maxHeight = window.innerHeight * 0.9;
+        let s;
+        if (maxHeight * xsize - maxWidth * ysize > 0) {
+            s = maxWidth / (xsize * scale);
+        } else {
+            s = maxHeight / (ysize * scale);
+        }
+        const dx = (window.innerWidth - s * xsize * scale) / 2;
+        const dy = (window.innerHeight - s * ysize * scale) / 2;
+        container.style.transform = `translate(${dx}px, ${dy}px) scale(${s})`;
+    }
 
     function positionDiv(item) {
         item.div.style.left = (item.x * scale) + "px";
@@ -203,7 +220,7 @@
         div.style.transform = makeBallTranslate(x, y, r);
         container.appendChild(div);
     }*/
- 
+
     function initialiseBall() {
         const radius = 0.5;
         const div = document.createElement("div");
@@ -236,6 +253,8 @@
             // TODO: Model bounces off corners of bat
             if (bat.p.x <= ball.p.x && ball.p.x <= bat.p.x + bat.w) {
                 ball.v = ball.v.add(normal.mul(-2 * ball.v.dot(normal)));
+                // Add some bat momentum to the ball
+                //ball.v.x += bat.direction * 1;
             }
             launchBall(true);
         }
@@ -249,7 +268,7 @@
 
         function deadBall(normal) {
             // TODO: Continue for now
-            //bounce(normal);
+            bounce(normal);
         }
 
         function test(obstacle, reaction) {
@@ -284,7 +303,7 @@
 
         for (const brick of bricks) {
             if (!brick.dead) {
-                testBox(brick.x, brick.x + brick.w, brick.y, brick.y + brick.h, normal => {bounceBrick(normal, brick);} );
+                testBox(brick.x, brick.x + brick.w, brick.y, brick.y + brick.h, normal => { bounceBrick(normal, brick); });
             }
         }
 

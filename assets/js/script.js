@@ -219,10 +219,10 @@
         div.style.height = (ball.h * scale) + "px";
         div.style.transform = makeBallTranslate(ball.p, ball.r);
         container.appendChild(div);
-        launchBall();
+        launchBall(true);
     }
 
-    function launchBall() {
+    function launchBall(skipBat) {
         const p0 = new Vector2(ball.r, ysize - ball.r);
         const p1 = new Vector2(ball.r, ball.r);
         const p2 = new Vector2(xsize - ball.r, ball.r);
@@ -237,6 +237,19 @@
             launchBall();
         }
 
+        function bounceBat(normal) {
+            updateBatPosition();
+            // TODO: Model bounces off corners of bat
+            if (bat.p.x <= ball.p.x && ball.p.x <= bat.p.x + bat.w) {
+                ball.v = ball.v.add(normal.mul(-2 * ball.v.dot(normal)));
+            }
+            launchBall(true);
+        }
+
+        function deadBall() {
+
+        }
+
         function test(obstacle, reaction) {
             const t = obstacle.intersection(ball.p, ball.v);
             if (t > 0 && t < d) {
@@ -246,12 +259,22 @@
             }
         }
 
+        function testBox(x1, x2, y1, y2, reaction) {
+            // TODO: Update line intersection to check it's within line segment
+            test(new Line(new Vector2(x1, y1 - ball.r), new Vector2(x2, y1 - ball.r)), reaction);
+            test(new Line(new Vector2(x1 - ball.r, y1), new Vector2(x1 - ball.r, y2)), reaction);
+            test(new Line(new Vector2(x1, y2 + ball.r), new Vector2(x2, y2 + ball.r)), reaction);
+            test(new Line(new Vector2(x2 + ball.r, y1), new Vector2(x2 + ball.r, y2)), reaction);
+        }
+
         test(new Line(p0, p1), bounce);
         test(new Line(p1, p2), bounce);
         test(new Line(p2, p3), bounce);
-        test(new Line(p3, p0), bounce); // TODO: Die here
-        test(new Line(p2, p3), bounce); // TODO: Bat here
-        test(new Circle(new Vector2(20, 20), 5), bounce);
+        test(new Line(p3, p0), deadBall);
+        if (!skipBat) {
+            test(new Line(new Vector2(0, bat.p.y - ball.r), new Vector2(xsize, bat.p.y - ball.r)), bounceBat);
+        }
+        //test(new Circle(new Vector2(20, 20), 5), bounce);
 
         // Bounce this far short of the wall to prevent rounding errors putting us on the wrong side
         const fudge = 0.01;
@@ -273,6 +296,13 @@
         });
     }
 
+    function updateBatPosition() {
+        if (bat.animation) {
+            let currentTransform = new DOMMatrixReadOnly(getComputedStyle(bat.div).transform);
+            bat.p.x = currentTransform.e / scale;
+        }
+    }
+
     function manageBat() {
         let d = 0;
         if (rightPressed) {
@@ -287,8 +317,7 @@
 
         if (bat.animation) {
             // bat is moving so figure out where it is
-            let currentTransform = new DOMMatrixReadOnly(getComputedStyle(bat.div).transform);
-            bat.p.x = currentTransform.e / scale;
+            updateBatPosition();
             bat.div.style.transform = makeTranslate(bat.p);
             // and cancel the animation
             bat.animation.cancel();

@@ -144,6 +144,10 @@
 
         window.addEventListener("resize", resize);
 
+        document.addEventListener("touchstart", touch);
+        document.addEventListener("touchend", touch);
+        document.addEventListener("touchcancel", touch);
+
         resize();
         initialiseBat();
         initialiseBricks();
@@ -325,6 +329,21 @@
             ball.animation = undefined;
             bestReaction(normal);
         });
+    }
+
+    function touch(e) {
+        e.preventDefault();
+        leftPressed = false;
+        rightPressed = false;
+        const centreX = screen.width / 2;
+        for (const touch of e.touches) {
+            if (touch.screenX < centreX) {
+                leftPressed = true;
+            } else if (touch.screenX > centreX) {
+                rightPressed = true;
+            }
+        }
+        manageBat();
     }
 
     function updateBatPosition() {

@@ -138,7 +138,6 @@
             }
         });
 
-        addCircle(20, 20, 5);
         initialiseBat();
         initialiseBricks();
         initialiseBall();
@@ -151,21 +150,21 @@
         item.div.style.height = (item.h * scale) + "px";
     }
 
-    function makeTranslate(x, y) {
-        return `translate(${x * scale}px,${y * scale}px)`;
+    function makeTranslate(p) {
+        return `translate(${p.x * scale}px,${p.y * scale}px)`;
     }
 
-    function makeBallTranslate(x, y, r) {
-        return `translate(${(x - r) * scale}px,${(y - r) * scale}px)`;
+    function makeBallTranslate(p, r) {
+        return `translate(${(p.x - r) * scale}px,${(p.y - r) * scale}px)`;
     }
 
     function initialiseBat() {
         const div = document.createElement("div");
-        bat = { x: 10, y: ysize - 3, w: 8, h: 1, div: div };
+        bat = { p: new Vector2(10, ysize - 3), w: 8, h: 1, div: div };
         div.classList.add("bat");
         div.style.width = (bat.w * scale) + "px";
         div.style.height = (bat.h * scale) + "px";
-        div.style.transform = makeTranslate(bat.x, bat.y);
+        div.style.transform = makeTranslate(bat.p);
         container.appendChild(div);
     }
 
@@ -202,14 +201,14 @@
         }
     }
 
-    function addCircle(x, y, r) {
+    /*function addCircle(x, y, r) {
         const div = document.createElement("div");
         div.classList.add("circ");
         div.style.width = (2 * r * scale) + "px";
         div.style.height = (2 * r * scale) + "px";
         div.style.transform = makeBallTranslate(x, y, r);
         container.appendChild(div);
-    }
+    }*/
  
     function initialiseBall() {
         const radius = 0.5;
@@ -218,7 +217,7 @@
         div.classList.add("ball");
         div.style.width = (ball.w * scale) + "px";
         div.style.height = (ball.h * scale) + "px";
-        div.style.transform = makeBallTranslate(ball.p.x, ball.p.y, ball.r);
+        div.style.transform = makeBallTranslate(ball.p, ball.r);
         container.appendChild(div);
         launchBall();
     }
@@ -229,42 +228,48 @@
         const p2 = new Vector2(xsize - ball.r, ball.r);
         const p3 = new Vector2(xsize - ball.r, ysize - ball.r);
 
-        const lines = [
-            new Line(p0, p1),
-            new Line(p1, p2),
-            new Line(p2, p3),
-            new Line(p3, p0),
-            new Circle(new Vector2(20, 20), 5)
-        ]
-
         let d = Infinity;
-        let best;
-        let speed = ball.v.magnitude();
-        let v = ball.v;
-        for (const line of lines) {
-            const t = line.intersection(ball.p, v);
+        let bestObstacle;
+        let bestReaction;
+
+        function bounce(normal) {
+            ball.v = ball.v.add(normal.mul(-2 * ball.v.dot(normal)));
+            launchBall();
+        }
+
+        function test(obstacle, reaction) {
+            const t = obstacle.intersection(ball.p, ball.v);
             if (t > 0 && t < d) {
                 d = t;
-                best = line;
+                bestObstacle = obstacle;
+                bestReaction = reaction;
             }
         }
+
+        test(new Line(p0, p1), bounce);
+        test(new Line(p1, p2), bounce);
+        test(new Line(p2, p3), bounce);
+        test(new Line(p3, p0), bounce); // TODO: Die here
+        test(new Line(p2, p3), bounce); // TODO: Bat here
+        test(new Circle(new Vector2(20, 20), 5), bounce);
+
         // Bounce this far short of the wall to prevent rounding errors putting us on the wrong side
         const fudge = 0.01;
+        const speed = ball.v.magnitude();
         const target = ball.p.add(ball.v.mul(d - fudge / speed));
-        const normal = best.unitNormal(target);
+        const normal = bestObstacle.unitNormal(target);
         ball.animation = ball.div.animate(
             [
-                { transform: makeBallTranslate(ball.p.x, ball.p.y, ball.r) }, // 0%
-                { transform: makeBallTranslate(target.x, target.y, ball.r) } // 100%
+                { transform: makeBallTranslate(ball.p, ball.r) }, // 0%
+                { transform: makeBallTranslate(target, ball.r) } // 100%
             ],
             1000 * d / speed
         );
         ball.p = target;
-        ball.div.style.transform = makeBallTranslate(ball.p.x, ball.p.y, ball.r);
+        ball.div.style.transform = makeBallTranslate(ball.p, ball.r);
         ball.animation.addEventListener("finish", function () {
             ball.animation = undefined;
-            ball.v = ball.v.add(normal.mul(-2 * ball.v.dot(normal)));
-            launchBall();
+            bestReaction(normal);
         });
     }
 
@@ -283,8 +288,8 @@
         if (bat.animation) {
             // bat is moving so figure out where it is
             let currentTransform = new DOMMatrixReadOnly(getComputedStyle(bat.div).transform);
-            bat.x = currentTransform.e / scale;
-            bat.div.style.transform = makeTranslate(bat.x, bat.y);
+            bat.p.x = currentTransform.e / scale;
+            bat.div.style.transform = makeTranslate(bat.p);
             // and cancel the animation
             bat.animation.cancel();
             bat.animation = undefined;
@@ -294,16 +299,17 @@
         if (d !== 0) {
             let speed = 50;
             let limit = d < 0 ? 0 : xsize - bat.w;
+            const target = new Vector2(limit, bat.p.y);
             bat.animation = bat.div.animate(
                 [
-                    { transform: makeTranslate(bat.x, bat.y) }, // 0%
-                    { transform: makeTranslate(limit, bat.y) } // 100%
+                    { transform: makeTranslate(bat.p) }, // 0%
+                    { transform: makeTranslate(target) } // 100%
                 ],
-                1000 * Math.abs(bat.x - limit) / speed
+                1000 * Math.abs(bat.p.x - limit) / speed
             );
             bat.direction = d;
-            bat.div.style.transform = makeTranslate(limit, bat.y);
-            bat.x = limit;
+            bat.div.style.transform = makeTranslate(target);
+            bat.p = target;
             bat.animation.addEventListener("finish", function () {
                 bat.animation = undefined;
                 bat.direction = 0;

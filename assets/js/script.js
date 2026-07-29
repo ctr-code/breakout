@@ -247,7 +247,9 @@
             launchBall();
         }
 
-        function deadBall() {
+        function deadBall(normal) {
+            // TODO: Continue for now
+            //bounce(normal);
         }
 
         function test(obstacle, reaction) {
@@ -260,11 +262,16 @@
         }
 
         function testBox(x1, x2, y1, y2, reaction) {
+            // Sides
             test(new Line(new Vector2(x1, y1 - ball.r), new Vector2(x2, y1 - ball.r)), reaction);
             test(new Line(new Vector2(x1 - ball.r, y1), new Vector2(x1 - ball.r, y2)), reaction);
             test(new Line(new Vector2(x1, y2 + ball.r), new Vector2(x2, y2 + ball.r)), reaction);
             test(new Line(new Vector2(x2 + ball.r, y1), new Vector2(x2 + ball.r, y2)), reaction);
-            //test(new Circle(new Vector2(20, 20), 5), bounce);
+            // Corners
+            test(new Circle(new Vector2(x1, y1), ball.r), reaction);
+            test(new Circle(new Vector2(x2, y1), ball.r), reaction);
+            test(new Circle(new Vector2(x2, y2), ball.r), reaction);
+            test(new Circle(new Vector2(x1, y2), ball.r), reaction);
         }
 
         test(new Line(p0, p1), bounce);

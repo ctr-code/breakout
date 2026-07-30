@@ -340,7 +340,10 @@
     function updateBatPosition() {
         if (bat.animation) {
             let currentTransform = new DOMMatrixReadOnly(getComputedStyle(bat.div).transform);
-            bat.p.x = currentTransform.e / scale;
+            let fontSize = getComputedStyle(bat.div).fontSize;
+            // TODO: Handle non-px units?
+            // Convert back to em units
+            bat.p.x = currentTransform.e / (scale * Number.parseFloat(fontSize));
         }
     }
 

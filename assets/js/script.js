@@ -104,9 +104,10 @@
         }
     }
 
+    // N.B. These need to match the css on #game
     const xsize = 45;
     const ysize = 40;
-    const scale = 15;
+    const scale = 1;
 
     let container,
         bat,
@@ -117,8 +118,8 @@
 
     document.addEventListener("DOMContentLoaded", function () {
         container = document.getElementById("game");
-        container.style.width = (xsize * scale) + "px";
-        container.style.height = (ysize * scale) + "px";
+        //container.style.width = (xsize * scale) + "px";
+        //container.style.height = (ysize * scale) + "px";
 
         document.addEventListener("keydown", function (e) {
             if (!e.altKey && !e.ctrlKey && !e.shiftKey && !e.repeat) {
@@ -155,40 +156,29 @@
     });
 
     function resize() {
-        const maxWidth = window.innerWidth * 0.9;
-        const maxHeight = window.innerHeight * 0.9;
-        let s;
-        if (maxHeight * xsize - maxWidth * ysize > 0) {
-            s = maxWidth / (xsize * scale);
-        } else {
-            s = maxHeight / (ysize * scale);
-        }
-        const dx = (window.innerWidth - s * xsize * scale) / 2;
-        const dy = (window.innerHeight - s * ysize * scale) / 2;
-        container.style.transform = `translate(${dx}px, ${dy}px) scale(${s})`;
     }
 
     function positionDiv(item) {
-        item.div.style.left = (item.x * scale) + "px";
-        item.div.style.top = (item.y * scale) + "px";
-        item.div.style.width = (item.w * scale) + "px";
-        item.div.style.height = (item.h * scale) + "px";
+        item.div.style.left = (item.x * scale) + "em";
+        item.div.style.top = (item.y * scale) + "em";
+        item.div.style.width = (item.w * scale) + "em";
+        item.div.style.height = (item.h * scale) + "em";
     }
 
     function makeTranslate(p) {
-        return `translate(${p.x * scale}px,${p.y * scale}px)`;
+        return `translate(${p.x * scale}em,${p.y * scale}em)`;
     }
 
     function makeBallTranslate(p, r) {
-        return `translate(${(p.x - r) * scale}px,${(p.y - r) * scale}px)`;
+        return `translate(${(p.x - r) * scale}em,${(p.y - r) * scale}em)`;
     }
 
     function initialiseBat() {
         const div = document.createElement("div");
         bat = { p: new Vector2(10, ysize - 3), w: 8, h: 1, div: div };
         div.classList.add("bat");
-        div.style.width = (bat.w * scale) + "px";
-        div.style.height = (bat.h * scale) + "px";
+        div.style.width = (bat.w * scale) + "em";
+        div.style.height = (bat.h * scale) + "em";
         div.style.transform = makeTranslate(bat.p);
         container.appendChild(div);
     }
@@ -207,10 +197,11 @@
                 bricks.push(brick);
                 div.classList.add("brick");
                 div.classList.add("row" + row);
-                div.style.left = (brick.x * scale) + "px";
-                div.style.top = (brick.y * scale) + "px";
-                div.style.width = (brick.w * scale) + "px";
-                div.style.height = (brick.h * scale) + "px";
+                // TODO: Replace with positionDiv?
+                div.style.left = (brick.x * scale) + "em";
+                div.style.top = (brick.y * scale) + "em";
+                div.style.width = (brick.w * scale) + "em";
+                div.style.height = (brick.h * scale) + "em";
                 container.appendChild(div);
             }
         }
@@ -230,8 +221,8 @@
         const div = document.createElement("div");
         ball = { p: new Vector2(xsize - 10, ysize - 3), w: 2 * radius, h: 2 * radius, r: radius, v: new Vector2(-4, -4), div: div };
         div.classList.add("ball");
-        div.style.width = (ball.w * scale) + "px";
-        div.style.height = (ball.h * scale) + "px";
+        div.style.width = (ball.w * scale) + "em";
+        div.style.height = (ball.h * scale) + "em";
         div.style.transform = makeBallTranslate(ball.p, ball.r);
         container.appendChild(div);
         launchBall(true);

@@ -2,13 +2,25 @@ body {
     background-color: black;
 }
 
+#outer {
+    /* first number is 100/width, second is 100/height */
+    /* (actually using width+1 and height+1 to create space for the border) */
+    font-size: min(2.174vw, 2.439vh);
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 #game {
-    border-width: 5px 5px 0 5px;
+    width: 45em;
+    height: 40em;
+    border-width: 0.3em 0.3em 0 0.3em;
     border-style: solid;
     border-color: yellow;
     position: relative;
     box-sizing: content-box;
-    transform-origin: top left;
 }
 
 .bat {
@@ -30,6 +42,8 @@ body {
 
 .brick {
     position: absolute;
+    width: 3em;
+    height: 2em;
 }
 
 .dead {
